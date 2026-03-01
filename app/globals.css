@@ -24,3 +24,19 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  aside {
+    display: none !important;
+  }
+  main {
+    max-width: none;
+  }
+  body {
+    background: white;
+    color: #171717;
+  }
+}

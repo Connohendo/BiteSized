@@ -7,3 +7,11 @@ export type ProcessResult = {
 };
 
 export type ProcessResultPayload = ProcessResult;
+
+export type ProcessOptions = {
+  flashcardCount?: number;
+  template?: "default" | "exam" | "meeting" | "research";
+  language?: string;
+  summaryDetail?: "brief" | "detailed";
+  difficulty?: "simple" | "standard" | "advanced";
+};

@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { CopyButton } from "@/components/CopyButton";
 
 type FlashcardsCardProps = {
   flashcards: { front: string; back: string }[];
 };
+
+function flashcardsToCopyText(flashcards: { front: string; back: string }[]): string {
+  return flashcards.map((c) => `${c.front}\t${c.back}`).join("\n");
+}
 
 export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
   const [index, setIndex] = useState(0);
@@ -18,9 +23,12 @@ export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
 
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">
-        Flashcards
-      </h2>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h2 className="text-lg font-medium text-[var(--foreground)]">
+          Flashcards
+        </h2>
+        <CopyButton text={flashcardsToCopyText(flashcards)} />
+      </div>
       <div className="flex flex-col gap-4">
         <button
           type="button"

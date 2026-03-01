@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ProcessResult } from "./types";
+import type { ProcessResult, ProcessOptions } from "./types";
 
 const DEFAULT_FLASHCARD_COUNT = 15;
 
@@ -13,9 +13,51 @@ function getClient(): OpenAI {
   return new OpenAI({ apiKey: key });
 }
 
+function buildSystemPrompt(opts: {
+  flashcardCount: number;
+  template?: ProcessOptions["template"];
+  language?: string;
+  summaryDetail?: ProcessOptions["summaryDetail"];
+  difficulty?: ProcessOptions["difficulty"];
+}): string {
+  const lang = opts.language?.trim() || "English";
+  const outputIn = `Produce all output in ${lang}.`;
+
+  const summaryGuidance =
+    opts.summaryDetail === "detailed"
+      ? "summary: string (2-4 detailed paragraphs, include nuance and context)"
+      : "summary: string (1-3 short, concise paragraphs)";
+
+  const difficultyGuidance =
+    opts.difficulty === "simple"
+      ? "Use simple language suitable for beginners."
+      : opts.difficulty === "advanced"
+        ? "Use precise, technical language where appropriate."
+        : "Use clear, standard language.";
+
+  const templateGuidance =
+    opts.template === "exam"
+      ? "Focus on concepts likely to appear on exams: definitions, key facts, comparisons."
+      : opts.template === "meeting"
+        ? "Focus on decisions, action items, and main takeaways."
+        : opts.template === "research"
+          ? "Focus on methodology, findings, and implications; use an academic tone."
+          : "";
+
+  return `You are a study assistant. Given raw text, you produce structured study materials.
+${outputIn}
+${difficultyGuidance}
+${templateGuidance ? templateGuidance + "\n" : ""}
+Respond with a single valid JSON object (no markdown, no code fence) with exactly these keys:
+- ${summaryGuidance}
+- bullets: string[] (key points as bullet strings, 5-15 items)
+- keyTerms: { term: string, definition: string }[] (important terms with definitions, 5-15 items)
+- flashcards: { front: string, back: string }[] (exactly ${opts.flashcardCount} flashcards; front = question or term, back = answer or definition)`;
+}
+
 export async function generateStudyMaterials(
   text: string,
-  options?: { flashcardCount?: number }
+  options?: ProcessOptions
 ): Promise<Omit<ProcessResult, "text">> {
   if (!text.trim()) {
     return {
@@ -27,14 +69,15 @@ export async function generateStudyMaterials(
   }
 
   const openai = getClient();
-  const flashcardCount = options?.flashcardCount ?? DEFAULT_FLASHCARD_COUNT;
-
-  const systemPrompt = `You are a study assistant. Given raw text, you produce structured study materials.
-Respond with a single valid JSON object (no markdown, no code fence) with exactly these keys:
-- summary: string (1-3 short paragraphs summarizing the content)
-- bullets: string[] (key points as bullet strings, 5-15 items)
-- keyTerms: { term: string, definition: string }[] (important terms with definitions, 5-15 items)
-- flashcards: { front: string, back: string }[] (exactly ${flashcardCount} flashcards; front = question or term, back = answer or definition)`;
+  const flashcardCount =
+    options?.flashcardCount ?? DEFAULT_FLASHCARD_COUNT;
+  const systemPrompt = buildSystemPrompt({
+    flashcardCount,
+    template: options?.template,
+    language: options?.language,
+    summaryDetail: options?.summaryDetail,
+    difficulty: options?.difficulty,
+  });
 
   const userPrompt = `Extract study materials from this text:\n\n${text.slice(0, 28000)}`;
 

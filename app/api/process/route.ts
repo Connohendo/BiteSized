@@ -1,14 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromBuffer } from "@/lib/parse";
 import { generateStudyMaterials } from "@/lib/llm";
+import type { ProcessOptions } from "@/lib/types";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_TOTAL_TEXT = 100_000;
+
+function parseOptions(raw: unknown): ProcessOptions | undefined {
+  if (!raw) return undefined;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return parseOptions(parsed);
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const o = raw as Record<string, unknown>;
+  const opts: ProcessOptions = {};
+  if (typeof o.flashcardCount === "number") opts.flashcardCount = o.flashcardCount;
+  if (o.template === "exam" || o.template === "meeting" || o.template === "research" || o.template === "default") opts.template = o.template;
+  if (typeof o.language === "string") opts.language = o.language;
+  if (o.summaryDetail === "brief" || o.summaryDetail === "detailed") opts.summaryDetail = o.summaryDetail;
+  if (o.difficulty === "simple" || o.difficulty === "standard" || o.difficulty === "advanced") opts.difficulty = o.difficulty;
+  return Object.keys(opts).length ? opts : undefined;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get("content-type") ?? "";
     let combinedText = "";
+    let options: ProcessOptions | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
@@ -16,6 +39,8 @@ export async function POST(request: NextRequest) {
       if (typeof textPart === "string" && textPart.trim()) {
         combinedText = textPart.trim();
       }
+      const optionsPart = formData.get("options");
+      options = parseOptions(optionsPart);
 
       const files = formData.getAll("files");
       for (const file of files) {
@@ -50,6 +75,7 @@ export async function POST(request: NextRequest) {
       if (typeof text === "string") {
         combinedText = text.trim();
       }
+      options = parseOptions(body?.options);
     }
 
     if (combinedText.length > MAX_TOTAL_TEXT) {
@@ -69,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { summary, bullets, flashcards, keyTerms } =
-      await generateStudyMaterials(text);
+      await generateStudyMaterials(text, options);
 
     return NextResponse.json({
       text,

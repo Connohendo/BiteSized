@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { ProcessResult } from "@/lib/types";
+import type { ProcessResult, ProcessOptions } from "@/lib/types";
 
 const ACCEPT = ".pdf,.doc,.docx,.txt";
 const MAX_FILE_SIZE_MB = 10;
@@ -21,6 +21,12 @@ export function InputZone({
   const [pasteText, setPasteText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [flashcardCount, setFlashcardCount] = useState(15);
+  const [template, setTemplate] = useState<ProcessOptions["template"]>("default");
+  const [language, setLanguage] = useState("");
+  const [summaryDetail, setSummaryDetail] = useState<ProcessOptions["summaryDetail"]>("brief");
+  const [difficulty, setDifficulty] = useState<ProcessOptions["difficulty"]>("standard");
 
   const processInput = useCallback(async () => {
     let textToSend = pasteText.trim();
@@ -31,6 +37,16 @@ export function InputZone({
     }
     if (textToSend) {
       formData.append("text", textToSend);
+    }
+
+    const opts: ProcessOptions = {};
+    if (flashcardCount >= 5 && flashcardCount <= 30) opts.flashcardCount = flashcardCount;
+    if (template && template !== "default") opts.template = template;
+    if (language.trim()) opts.language = language.trim();
+    if (summaryDetail) opts.summaryDetail = summaryDetail;
+    if (difficulty) opts.difficulty = difficulty;
+    if (Object.keys(opts).length > 0) {
+      formData.append("options", JSON.stringify(opts));
     }
 
     if (files.length === 0 && !textToSend) {
@@ -63,7 +79,7 @@ export function InputZone({
     } finally {
       onProcessing(false);
     }
-  }, [pasteText, files, onProcessComplete, onProcessError, onProcessing]);
+  }, [pasteText, files, flashcardCount, template, language, summaryDetail, difficulty, onProcessComplete, onProcessError, onProcessing]);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -163,6 +179,77 @@ export function InputZone({
           rows={6}
           className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted)] p-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
+      </div>
+
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
+        <button
+          type="button"
+          onClick={() => setOptionsOpen((o) => !o)}
+          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)]"
+        >
+          {optionsOpen ? "▼" : "▶"} Generation options
+        </button>
+        {optionsOpen && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Flashcards</label>
+              <input
+                type="number"
+                min={5}
+                max={30}
+                value={flashcardCount}
+                onChange={(e) => setFlashcardCount(Number(e.target.value) || 15)}
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Template</label>
+              <select
+                value={template}
+                onChange={(e) => setTemplate(e.target.value as ProcessOptions["template"])}
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+              >
+                <option value="default">Default</option>
+                <option value="exam">Exam prep</option>
+                <option value="meeting">Meeting notes</option>
+                <option value="research">Research paper</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Output language</label>
+              <input
+                type="text"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                placeholder="e.g. English, Spanish"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Summary</label>
+              <select
+                value={summaryDetail}
+                onChange={(e) => setSummaryDetail(e.target.value as ProcessOptions["summaryDetail"])}
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+              >
+                <option value="brief">Brief</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Difficulty</label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as ProcessOptions["difficulty"])}
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+              >
+                <option value="simple">Simple</option>
+                <option value="standard">Standard</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       <button
