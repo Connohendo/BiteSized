@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromBuffer } from "@/lib/parse";
+import { generateStudyMaterials } from "@/lib/llm";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_TOTAL_TEXT = 100_000;
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
       const files = formData.getAll("files");
       for (const file of files) {
         const isFileLike =
-          file &&
+          typeof file === "object" &&
+          file !== null &&
           typeof (file as Blob).arrayBuffer === "function" &&
           "name" in file &&
           typeof (file as { size: number }).size === "number";
@@ -54,7 +56,28 @@ export async function POST(request: NextRequest) {
       combinedText = combinedText.slice(0, MAX_TOTAL_TEXT);
     }
 
-    return NextResponse.json({ text: combinedText || "" });
+    const text = combinedText || "";
+
+    if (!text) {
+      return NextResponse.json({
+        text: "",
+        summary: "",
+        bullets: [],
+        flashcards: [],
+        keyTerms: [],
+      });
+    }
+
+    const { summary, bullets, flashcards, keyTerms } =
+      await generateStudyMaterials(text);
+
+    return NextResponse.json({
+      text,
+      summary,
+      bullets,
+      flashcards,
+      keyTerms,
+    });
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Failed to process input.";

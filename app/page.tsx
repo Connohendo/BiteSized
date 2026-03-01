@@ -2,20 +2,25 @@
 
 import { useState } from "react";
 import { InputZone } from "@/components/InputZone";
+import { SummaryCard } from "@/components/output/SummaryCard";
+import { BulletsCard } from "@/components/output/BulletsCard";
+import { KeyTermsCard } from "@/components/output/KeyTermsCard";
+import { FlashcardsCard } from "@/components/output/FlashcardsCard";
+import type { ProcessResult } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [extractedText, setExtractedText] = useState<string | null>(null);
+  const [result, setResult] = useState<ProcessResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleProcessComplete = (text: string) => {
-    setExtractedText(text);
+  const handleProcessComplete = (data: ProcessResult) => {
+    setResult(data);
     setError(null);
   };
 
   const handleProcessError = (message: string) => {
     setError(message);
-    setExtractedText(null);
+    setResult(null);
   };
 
   const handleProcessing = (loading: boolean) => {
@@ -29,7 +34,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <p className="text-[var(--muted)] mt-1">
-          Upload a file or paste text to extract and process content.
+          Upload a file or paste text to get a summary, key points, flashcards, and key terms.
         </p>
       </div>
 
@@ -40,8 +45,8 @@ export default function DashboardPage() {
       />
 
       {isLoading && (
-        <div className="mt-6 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 text-center text-[var(--muted)]">
-          Processing…
+        <div className="mt-6 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-8 text-center text-[var(--muted)]">
+          Extracting text and generating study materials…
         </div>
       )}
 
@@ -51,14 +56,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {extractedText !== null && !isLoading && (
-        <div className="mt-6 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-          <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">
-            Extracted text
-          </h2>
-          <div className="text-[var(--foreground)] whitespace-pre-wrap text-sm leading-relaxed max-h-[400px] overflow-y-auto">
-            {extractedText || "(empty)"}
-          </div>
+      {result && !isLoading && (
+        <div className="mt-8 space-y-6">
+          <SummaryCard summary={result.summary} />
+          <BulletsCard bullets={result.bullets} />
+          <KeyTermsCard keyTerms={result.keyTerms} />
+          <FlashcardsCard flashcards={result.flashcards} />
         </div>
       )}
     </div>

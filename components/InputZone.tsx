@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import type { ProcessResult } from "@/lib/types";
 
 const ACCEPT = ".pdf,.doc,.docx,.txt";
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 type InputZoneProps = {
-  onProcessComplete: (text: string) => void;
+  onProcessComplete: (result: ProcessResult) => void;
   onProcessError: (message: string) => void;
   onProcessing: (loading: boolean) => void;
 };
@@ -48,7 +49,13 @@ export function InputZone({
         onProcessError(data.error ?? "Processing failed.");
         return;
       }
-      onProcessComplete(data.text ?? "");
+      onProcessComplete({
+        text: data.text ?? "",
+        summary: data.summary ?? "",
+        bullets: Array.isArray(data.bullets) ? data.bullets : [],
+        flashcards: Array.isArray(data.flashcards) ? data.flashcards : [],
+        keyTerms: Array.isArray(data.keyTerms) ? data.keyTerms : [],
+      });
     } catch (e) {
       onProcessError(
         e instanceof Error ? e.message : "Network or server error."
