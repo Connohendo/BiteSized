@@ -1,22 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { InputZone } from "@/components/InputZone";
 import { SummaryCard } from "@/components/output/SummaryCard";
 import { BulletsCard } from "@/components/output/BulletsCard";
 import { KeyTermsCard } from "@/components/output/KeyTermsCard";
 import { FlashcardsCard } from "@/components/output/FlashcardsCard";
+import { QuizCard } from "@/components/output/QuizCard";
 import { ExportBar } from "@/components/ExportBar";
+import { addToHistory, getHistoryItem } from "@/lib/history";
 import type { ProcessResult } from "@/lib/types";
 
-export default function DashboardPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
   const [result, setResult] = useState<ProcessResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const historyId = searchParams.get("history");
+    if (!historyId) return;
+    const item = getHistoryItem(historyId);
+    if (item?.result) {
+      setResult({
+        ...item.result,
+        quiz: item.result.quiz ?? [],
+      });
+      setError(null);
+    }
+  }, [searchParams]);
+
   const handleProcessComplete = (data: ProcessResult) => {
-    setResult(data);
+    const withQuiz = { ...data, quiz: data.quiz ?? [] };
+    setResult(withQuiz);
     setError(null);
+    addToHistory(withQuiz);
   };
 
   const handleProcessError = (message: string) => {
@@ -71,8 +90,28 @@ export default function DashboardPage() {
           <BulletsCard bullets={result.bullets} />
           <KeyTermsCard keyTerms={result.keyTerms} />
           <FlashcardsCard flashcards={result.flashcards} />
+          <QuizCard questions={result.quiz ?? []} />
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6 md:p-8 max-w-5xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold text-[var(--foreground)]">
+              Dashboard
+            </h1>
+            <p className="text-[var(--muted)] mt-1">Loading…</p>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

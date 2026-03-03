@@ -10,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@danielxceron/youtube-transcript": "^1.2.6",
+    "@extractus/article-extractor": "^8.0.19",
     "mammoth": "^1.8.0",
     "next": "^15.0.0",
     "openai": "^4.73.0",

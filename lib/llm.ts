@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ProcessResult, ProcessOptions } from "./types";
+import type { ProcessResult, ProcessOptions, QuizQuestion, CompareResult } from "./types";
 
 const DEFAULT_FLASHCARD_COUNT = 15;
 
@@ -52,7 +52,8 @@ Respond with a single valid JSON object (no markdown, no code fence) with exactl
 - ${summaryGuidance}
 - bullets: string[] (key points as bullet strings, 5-15 items)
 - keyTerms: { term: string, definition: string }[] (important terms with definitions, 5-15 items)
-- flashcards: { front: string, back: string }[] (exactly ${opts.flashcardCount} flashcards; front = question or term, back = answer or definition)`;
+- flashcards: { front: string, back: string }[] (exactly ${opts.flashcardCount} flashcards; front = question or term, back = answer or definition)
+- quiz: { question: string, options: string[], correctIndex: number }[] (exactly 8 multiple-choice questions; options has 4 strings, correctIndex is 0-3)`;
 }
 
 export async function generateStudyMaterials(
@@ -65,6 +66,7 @@ export async function generateStudyMaterials(
       bullets: [],
       flashcards: [],
       keyTerms: [],
+      quiz: [],
     };
   }
 
@@ -131,10 +133,81 @@ export async function generateStudyMaterials(
         .map((f) => ({ front: f.front, back: f.back }))
     : [];
 
+  const quiz: QuizQuestion[] = Array.isArray(obj.quiz)
+    ? obj.quiz
+        .filter((q): q is { question: string; options: string[]; correctIndex: number } => {
+          if (typeof q !== "object" || q === null) return false;
+          const o = q as Record<string, unknown>;
+          if (typeof o.question !== "string") return false;
+          if (!Array.isArray(o.options) || o.options.length !== 4) return false;
+          if (o.options.some((opt: unknown) => typeof opt !== "string")) return false;
+          const idx = Number(o.correctIndex);
+          if (!Number.isInteger(idx) || idx < 0 || idx > 3) return false;
+          return true;
+        })
+        .map((q) => ({
+          question: q.question,
+          options: q.options,
+          correctIndex: q.correctIndex,
+        }))
+    : [];
+
   return {
     summary,
     bullets,
     keyTerms,
     flashcards,
+    quiz,
   };
+}
+
+export async function generateComparison(
+  text1: string,
+  text2: string
+): Promise<CompareResult> {
+  if (!text1.trim() || !text2.trim()) {
+    return { summary: "", bullets: [] };
+  }
+
+  const openai = getClient();
+  const prompt = `You are comparing two documents. Provide:
+1. A comparison summary (2-4 paragraphs): main similarities, differences, and how they relate.
+2. A merged bullet list of key points from both documents (10-20 bullets), noting which document each point comes from when relevant (e.g. "Doc A: ..." or "Both: ...").
+
+Respond with a single valid JSON object (no markdown, no code fence) with exactly these keys:
+- summary: string
+- bullets: string[]`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: prompt },
+      {
+        role: "user",
+        content: `Document 1:\n\n${text1.slice(0, 14000)}\n\n---\n\nDocument 2:\n\n${text2.slice(0, 14000)}`,
+      },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.3,
+  });
+
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("No response from the model.");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    throw new Error("Model did not return valid JSON.");
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const summary = typeof obj.summary === "string" ? obj.summary : "";
+  const bullets = Array.isArray(obj.bullets)
+    ? obj.bullets.filter((b): b is string => typeof b === "string")
+    : [];
+
+  return { summary, bullets };
 }

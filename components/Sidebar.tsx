@@ -5,6 +5,7 @@ import { useTheme } from "@/components/ThemeProvider";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
+  { href: "/history", label: "History" },
 ];
 
 export function Sidebar() {

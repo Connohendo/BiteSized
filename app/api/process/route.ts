@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromBuffer } from "@/lib/parse";
 import { generateStudyMaterials } from "@/lib/llm";
+import { fetchArticleText } from "@/lib/fetch-article";
+import { getTranscriptText } from "@/lib/youtube-transcript";
 import type { ProcessOptions } from "@/lib/types";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -39,6 +41,33 @@ export async function POST(request: NextRequest) {
       if (typeof textPart === "string" && textPart.trim()) {
         combinedText = textPart.trim();
       }
+
+      const urlPart = formData.get("url");
+      if (typeof urlPart === "string" && urlPart.trim()) {
+        try {
+          const articleText = await fetchArticleText(urlPart.trim());
+          combinedText += (combinedText ? "\n\n" : "") + articleText;
+        } catch (e) {
+          return NextResponse.json(
+            { error: e instanceof Error ? e.message : "Failed to fetch article." },
+            { status: 400 }
+          );
+        }
+      }
+
+      const youtubePart = formData.get("youtubeUrl");
+      if (typeof youtubePart === "string" && youtubePart.trim()) {
+        try {
+          const transcriptText = await getTranscriptText(youtubePart.trim());
+          combinedText += (combinedText ? "\n\n" : "") + transcriptText;
+        } catch (e) {
+          return NextResponse.json(
+            { error: e instanceof Error ? e.message : "Failed to get YouTube transcript." },
+            { status: 400 }
+          );
+        }
+      }
+
       const optionsPart = formData.get("options");
       options = parseOptions(optionsPart);
 
@@ -91,10 +120,11 @@ export async function POST(request: NextRequest) {
         bullets: [],
         flashcards: [],
         keyTerms: [],
+        quiz: [],
       });
     }
 
-    const { summary, bullets, flashcards, keyTerms } =
+    const { summary, bullets, flashcards, keyTerms, quiz } =
       await generateStudyMaterials(text, options);
 
     return NextResponse.json({
@@ -103,6 +133,7 @@ export async function POST(request: NextRequest) {
       bullets,
       flashcards,
       keyTerms,
+      quiz: quiz ?? [],
     });
   } catch (e) {
     const message =

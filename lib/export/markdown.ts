@@ -32,5 +32,21 @@ export function toMarkdown(result: ProcessResult): string {
     );
   }
 
+  if (result.quiz?.length) {
+    sections.push(
+      "## Quiz\n\n" +
+        result.quiz
+          .map(
+            (q, i) =>
+              `${i + 1}. ${q.question}\n` +
+              q.options
+                .map((o, j) => `   ${String.fromCharCode(65 + j)}. ${o}`)
+                .join("\n") +
+              `\n   **Answer:** ${q.options[q.correctIndex]}`
+          )
+          .join("\n\n")
+    );
+  }
+
   return sections.join("\n\n---\n\n");
 }

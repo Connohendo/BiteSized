@@ -46,11 +46,13 @@ export function ExportBar({ result }: ExportBarProps) {
   }, []);
 
   const hasFlashcards = result.flashcards?.length > 0;
+  const hasQuiz = (result.quiz?.length ?? 0) > 0;
   const hasContent =
     result.summary ||
     (result.bullets?.length ?? 0) > 0 ||
     (result.keyTerms?.length ?? 0) > 0 ||
-    hasFlashcards;
+    hasFlashcards ||
+    hasQuiz;
 
   if (!hasContent) return null;
 
