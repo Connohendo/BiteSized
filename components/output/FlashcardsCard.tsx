@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CopyButton } from "@/components/CopyButton";
+import { FlashcardReview } from "@/components/flashcards/FlashcardReview";
+import { speak } from "@/lib/tts";
 
 type FlashcardsCardProps = {
   flashcards: { front: string; back: string }[];
@@ -14,22 +16,75 @@ function flashcardsToCopyText(flashcards: { front: string; back: string }[]): st
 export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+
+  const hasNext = flashcards?.length ? index < flashcards.length - 1 : false;
+  const hasPrev = index > 0;
+
+  useEffect(() => {
+    if (reviewMode || !flashcards?.length) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === " ") {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+      if (e.key === "ArrowLeft" && hasPrev) {
+        e.preventDefault();
+        setIndex((i) => i - 1);
+        setFlipped(false);
+      }
+      if (e.key === "ArrowRight" && hasNext) {
+        e.preventDefault();
+        setIndex((i) => i + 1);
+        setFlipped(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [reviewMode, hasPrev, hasNext, flashcards?.length]);
 
   if (!flashcards?.length) return null;
 
+  if (reviewMode) {
+    return (
+      <FlashcardReview
+        flashcards={flashcards}
+        onExit={() => setReviewMode(false)}
+      />
+    );
+  }
+
   const card = flashcards[index];
-  const hasNext = index < flashcards.length - 1;
-  const hasPrev = index > 0;
 
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
         <h2 className="text-lg font-medium text-[var(--foreground)]">
           Flashcards
         </h2>
-        <CopyButton text={flashcardsToCopyText(flashcards)} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setReviewMode(true)}
+            className="text-sm text-[var(--accent)] hover:underline"
+          >
+            Review now
+          </button>
+          <button
+            type="button"
+            onClick={() => speak(`Front. ${card.front}. Back. ${card.back}`)}
+            className="text-sm text-[var(--accent)] hover:underline"
+          >
+            Read aloud
+          </button>
+          <CopyButton text={flashcardsToCopyText(flashcards)} />
+        </div>
       </div>
-      <div className="flex flex-col gap-4">
+        <p className="text-xs text-[var(--muted)] mb-1">
+          Space to flip · ← → to navigate
+        </p>
+        <div className="flex flex-col gap-4">
         <button
           type="button"
           onClick={() => setFlipped((f) => !f)}

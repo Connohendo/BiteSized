@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ProcessResult, ProcessOptions, QuizQuestion, CompareResult } from "./types";
+import type { ProcessResult, ProcessOptions, QuizQuestion, CompareResult, OutlineNode } from "./types";
 
 const DEFAULT_FLASHCARD_COUNT = 15;
 
@@ -53,7 +53,9 @@ Respond with a single valid JSON object (no markdown, no code fence) with exactl
 - bullets: string[] (key points as bullet strings, 5-15 items)
 - keyTerms: { term: string, definition: string }[] (important terms with definitions, 5-15 items)
 - flashcards: { front: string, back: string }[] (exactly ${opts.flashcardCount} flashcards; front = question or term, back = answer or definition)
-- quiz: { question: string, options: string[], correctIndex: number }[] (exactly 8 multiple-choice questions; options has 4 strings, correctIndex is 0-3)`;
+- quiz: { question: string, options: string[], correctIndex: number, explanation: string }[] (exactly 8 multiple-choice questions; options has 4 strings, correctIndex is 0-3; explanation is a brief explanation of the correct answer)
+- outline: { title: string, children?: same structure }[] (hierarchical outline of the document: top-level array of nodes, each node has title and optional children array for nested sections)
+- mindMap: string (a valid Mermaid flowchart diagram: use flowchart TD or LR, define nodes like A[Label] and edges like A --> B or A --- B; represent main concepts and their relationships from the document; no code fence, no markdown, just the raw Mermaid line(s))`;
 }
 
 export async function generateStudyMaterials(
@@ -67,6 +69,8 @@ export async function generateStudyMaterials(
       flashcards: [],
       keyTerms: [],
       quiz: [],
+      outline: [],
+      mindMap: "",
     };
   }
 
@@ -135,7 +139,7 @@ export async function generateStudyMaterials(
 
   const quiz: QuizQuestion[] = Array.isArray(obj.quiz)
     ? obj.quiz
-        .filter((q): q is { question: string; options: string[]; correctIndex: number } => {
+        .filter((q): q is { question: string; options: string[]; correctIndex: number; explanation?: string } => {
           if (typeof q !== "object" || q === null) return false;
           const o = q as Record<string, unknown>;
           if (typeof o.question !== "string") return false;
@@ -149,8 +153,12 @@ export async function generateStudyMaterials(
           question: q.question,
           options: q.options,
           correctIndex: q.correctIndex,
+          explanation: typeof q.explanation === "string" ? q.explanation : undefined,
         }))
     : [];
+
+  const outline = parseOutline(obj.outline);
+  const mindMap = typeof obj.mindMap === "string" ? obj.mindMap.trim() : "";
 
   return {
     summary,
@@ -158,7 +166,21 @@ export async function generateStudyMaterials(
     keyTerms,
     flashcards,
     quiz,
+    outline,
+    mindMap,
   };
+}
+
+function parseOutline(raw: unknown): OutlineNode[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((n): n is Record<string, unknown> => typeof n === "object" && n !== null)
+    .map((n) => {
+      const title = typeof n.title === "string" ? n.title : "";
+      const children = Array.isArray(n.children) ? parseOutline(n.children) : undefined;
+      return { title, children };
+    })
+    .filter((n) => n.title.length > 0);
 }
 
 export async function generateComparison(
@@ -210,4 +232,62 @@ Respond with a single valid JSON object (no markdown, no code fence) with exactl
     : [];
 
   return { summary, bullets };
+}
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+export async function answerFromDocument(
+  documentText: string,
+  messages: ChatMessage[]
+): Promise<string> {
+  if (!documentText?.trim()) {
+    throw new Error("No document content to answer from.");
+  }
+
+  const openai = getClient();
+  const systemPrompt = `You are a helpful assistant. Answer the user's questions using ONLY the following document. Quote or paraphrase from the document when relevant. If the answer cannot be found in the document, say so clearly. Keep answers concise.`;
+
+  const docSnippet = documentText.slice(0, 28000);
+  const conversation = [
+    { role: "system" as const, content: systemPrompt },
+    { role: "user" as const, content: `Document:\n\n${docSnippet}` },
+    ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+  ];
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: conversation,
+    temperature: 0.3,
+    max_tokens: 1024,
+  });
+
+  const reply = completion.choices[0]?.message?.content?.trim() ?? "";
+  return reply || "I couldn't generate a response.";
+}
+
+export async function explainLikeFive(text: string): Promise<string> {
+  if (!text?.trim()) {
+    throw new Error("No text to simplify.");
+  }
+
+  const openai = getClient();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You explain things in very simple terms, as if to a curious 5-year-old. Use short sentences, simple words, and concrete examples. Keep the same main ideas but make them easy for anyone to understand. Do not use markdown or bullet points unless the user's text had them.",
+      },
+      {
+        role: "user",
+        content: `Explain the following in simple terms:\n\n${text.slice(0, 8000)}`,
+      },
+    ],
+    temperature: 0.4,
+    max_tokens: 1024,
+  });
+
+  const out = completion.choices[0]?.message?.content?.trim() ?? "";
+  return out || "I couldn't simplify that.";
 }

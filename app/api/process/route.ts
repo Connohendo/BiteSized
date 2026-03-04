@@ -121,10 +121,12 @@ export async function POST(request: NextRequest) {
         flashcards: [],
         keyTerms: [],
         quiz: [],
+        outline: [],
+        mindMap: "",
       });
     }
 
-    const { summary, bullets, flashcards, keyTerms, quiz } =
+    const { summary, bullets, flashcards, keyTerms, quiz, outline, mindMap } =
       await generateStudyMaterials(text, options);
 
     return NextResponse.json({
@@ -134,6 +136,8 @@ export async function POST(request: NextRequest) {
       flashcards,
       keyTerms,
       quiz: quiz ?? [],
+      outline: outline ?? [],
+      mindMap: mindMap ?? "",
     });
   } catch (e) {
     const message =

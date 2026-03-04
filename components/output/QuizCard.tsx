@@ -13,6 +13,7 @@ export function QuizCard({ questions }: QuizCardProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
+  const [wrongIndices, setWrongIndices] = useState<number[]>([]);
 
   const handleOptionClick = useCallback(
     (optionIndex: number, correctIndex: number) => {
@@ -21,9 +22,11 @@ export function QuizCard({ questions }: QuizCardProps) {
       setAnswered(true);
       if (optionIndex === correctIndex) {
         setScore((s) => s + 1);
+      } else {
+        setWrongIndices((prev) => [...prev, index]);
       }
     },
-    [answered]
+    [answered, index]
   );
 
   const handleNext = useCallback(() => {
@@ -38,6 +41,7 @@ export function QuizCard({ questions }: QuizCardProps) {
     setSelected(null);
     setScore(0);
     setAnswered(false);
+    setWrongIndices([]);
   }, []);
 
   const quiz = questions ?? [];
@@ -68,6 +72,9 @@ export function QuizCard({ questions }: QuizCardProps) {
 
   if (index >= quiz.length) {
     const pct = Math.round((score / quiz.length) * 100);
+    const wrongQuestions = wrongIndices
+      .filter((i) => i >= 0 && i < quiz.length)
+      .map((i) => quiz[i]);
     return (
       <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
         <h2 className="text-lg font-medium text-[var(--foreground)] mb-2">
@@ -79,6 +86,26 @@ export function QuizCard({ questions }: QuizCardProps) {
         <p className="text-sm text-[var(--muted)] mb-4">
           {pct >= 80 ? "Great job!" : pct >= 60 ? "Not bad. Review and try again." : "Keep studying and try again."}
         </p>
+        {wrongQuestions.length > 0 && (
+          <div className="mb-4 rounded-lg border border-[var(--card-border)] bg-[var(--background)] p-4">
+            <h3 className="text-sm font-medium text-[var(--foreground)] mb-2">
+              Review wrong answers
+            </h3>
+            <ul className="space-y-3 text-sm">
+              {wrongQuestions.map((q, idx) => (
+                <li key={idx} className="border-b border-[var(--card-border)] pb-3 last:border-0 last:pb-0">
+                  <p className="font-medium text-[var(--foreground)]">{q.question}</p>
+                  <p className="text-green-600 dark:text-green-400 mt-1">
+                    Correct: {q.options[q.correctIndex]}
+                  </p>
+                  {q.explanation && (
+                    <p className="text-[var(--muted)] mt-1">{q.explanation}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <button
           type="button"
           onClick={handleRestart}

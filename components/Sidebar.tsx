@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTheme } from "@/components/ThemeProvider";
+import { StudyTimer } from "@/components/StudyTimer";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -29,7 +30,8 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="p-3 border-t border-[var(--card-border)]">
+      <div className="p-3 border-t border-[var(--card-border)] space-y-3">
+        <StudyTimer />
         <button
           type="button"
           onClick={toggleTheme}

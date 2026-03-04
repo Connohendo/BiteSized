@@ -8,6 +8,9 @@ import { BulletsCard } from "@/components/output/BulletsCard";
 import { KeyTermsCard } from "@/components/output/KeyTermsCard";
 import { FlashcardsCard } from "@/components/output/FlashcardsCard";
 import { QuizCard } from "@/components/output/QuizCard";
+import { OutlineCard } from "@/components/output/OutlineCard";
+import { MindMapCard } from "@/components/output/MindMapCard";
+import { QAOverDoc } from "@/components/chat/QAOverDoc";
 import { ExportBar } from "@/components/ExportBar";
 import { addToHistory, getHistoryItem } from "@/lib/history";
 import type { ProcessResult } from "@/lib/types";
@@ -26,16 +29,23 @@ function DashboardContent() {
       setResult({
         ...item.result,
         quiz: item.result.quiz ?? [],
+        outline: item.result.outline ?? [],
+        mindMap: item.result.mindMap ?? "",
       });
       setError(null);
     }
   }, [searchParams]);
 
   const handleProcessComplete = (data: ProcessResult) => {
-    const withQuiz = { ...data, quiz: data.quiz ?? [] };
-    setResult(withQuiz);
+    const withExtras = {
+      ...data,
+      quiz: data.quiz ?? [],
+      outline: data.outline ?? [],
+      mindMap: data.mindMap ?? "",
+    };
+    setResult(withExtras);
     setError(null);
-    addToHistory(withQuiz);
+    addToHistory(withExtras);
   };
 
   const handleProcessError = (message: string) => {
@@ -91,6 +101,9 @@ function DashboardContent() {
           <KeyTermsCard keyTerms={result.keyTerms} />
           <FlashcardsCard flashcards={result.flashcards} />
           <QuizCard questions={result.quiz ?? []} />
+          <OutlineCard outline={result.outline ?? []} />
+          <MindMapCard mindMap={result.mindMap ?? ""} />
+          <QAOverDoc documentText={result.text} />
         </div>
       )}
     </div>

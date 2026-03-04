@@ -91,6 +91,8 @@ export function InputZone({
         flashcards: Array.isArray(data.flashcards) ? data.flashcards : [],
         keyTerms: Array.isArray(data.keyTerms) ? data.keyTerms : [],
         quiz: Array.isArray(data.quiz) ? data.quiz : [],
+        outline: Array.isArray(data.outline) ? data.outline : [],
+        mindMap: typeof data.mindMap === "string" ? data.mindMap : "",
       });
     } catch (e) {
       onProcessError(
@@ -140,6 +142,8 @@ export function InputZone({
         flashcards: [],
         keyTerms: [],
         quiz: [],
+        outline: [],
+        mindMap: "",
       });
     } catch (e) {
       onProcessError(e instanceof Error ? e.message : "Network or server error.");

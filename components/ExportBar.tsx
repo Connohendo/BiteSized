@@ -47,12 +47,16 @@ export function ExportBar({ result }: ExportBarProps) {
 
   const hasFlashcards = result.flashcards?.length > 0;
   const hasQuiz = (result.quiz?.length ?? 0) > 0;
+  const hasOutline = (result.outline?.length ?? 0) > 0;
+  const hasMindMap = (result.mindMap?.trim()?.length ?? 0) > 0;
   const hasContent =
     result.summary ||
     (result.bullets?.length ?? 0) > 0 ||
     (result.keyTerms?.length ?? 0) > 0 ||
     hasFlashcards ||
-    hasQuiz;
+    hasQuiz ||
+    hasOutline ||
+    hasMindMap;
 
   if (!hasContent) return null;
 

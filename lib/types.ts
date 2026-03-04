@@ -2,6 +2,12 @@ export type QuizQuestion = {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation?: string;
+};
+
+export type OutlineNode = {
+  title: string;
+  children?: OutlineNode[];
 };
 
 export type ProcessResult = {
@@ -11,6 +17,8 @@ export type ProcessResult = {
   flashcards: { front: string; back: string }[];
   keyTerms: { term: string; definition: string }[];
   quiz: QuizQuestion[];
+  outline: OutlineNode[];
+  mindMap: string;
 };
 
 export type HistoryItem = {
