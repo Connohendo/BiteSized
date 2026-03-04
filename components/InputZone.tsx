@@ -1,12 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { ProcessResult, ProcessOptions } from "@/lib/types";
 
 const ACCEPT = ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp";
 const MAX_FILE_SIZE_MB = 10;
 const FILE_EXT_REGEX = /\.(pdf|doc|docx|txt|jpg|jpeg|png|gif|webp)$/i;
 const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const URL_REGEX = /https?:\/\/[^\s<>"']+/g;
+
+function isYouTube(url: string): boolean {
+  const u = url.toLowerCase();
+  return u.includes("youtube.com") || u.includes("youtu.be");
+}
+
+function parseInputContent(raw: string): { urls: string[]; textWithoutUrls: string } {
+  const trimmed = raw.trim();
+  const matches = trimmed.match(URL_REGEX) ?? [];
+  const urls = matches.map((m) => m.replace(/[.,;:!?)\]\}'"]+$/, "").trim());
+  const textWithoutUrls = trimmed
+    .replace(URL_REGEX, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return { urls, textWithoutUrls };
+}
 
 type InputZoneProps = {
   onProcessComplete: (result: ProcessResult) => void;
@@ -20,8 +37,6 @@ export function InputZone({
   onProcessing,
 }: InputZoneProps) {
   const [pasteText, setPasteText] = useState("");
-  const [articleUrl, setArticleUrl] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -37,7 +52,10 @@ export function InputZone({
   const [difficulty, setDifficulty] = useState<ProcessOptions["difficulty"]>("standard");
 
   const processInput = useCallback(async () => {
-    let textToSend = pasteText.trim();
+    const { urls, textWithoutUrls } = parseInputContent(pasteText);
+    const articleUrl = urls.find((u) => !isYouTube(u));
+    const youtubeUrl = urls.find((u) => isYouTube(u));
+    const textToSend = textWithoutUrls;
     const formData = new FormData();
 
     if (files.length > 0) {
@@ -46,11 +64,11 @@ export function InputZone({
     if (textToSend) {
       formData.append("text", textToSend);
     }
-    if (articleUrl.trim()) {
-      formData.append("url", articleUrl.trim());
+    if (articleUrl) {
+      formData.append("url", articleUrl);
     }
-    if (youtubeUrl.trim()) {
-      formData.append("youtubeUrl", youtubeUrl.trim());
+    if (youtubeUrl) {
+      formData.append("youtubeUrl", youtubeUrl);
     }
 
     const opts: ProcessOptions = {};
@@ -64,10 +82,7 @@ export function InputZone({
     }
 
     const hasInput =
-      files.length > 0 ||
-      textToSend ||
-      articleUrl.trim() ||
-      youtubeUrl.trim();
+      files.length > 0 || textToSend || articleUrl !== undefined || youtubeUrl !== undefined;
     if (!hasInput) {
       onProcessError("Please paste text, add a URL, or upload at least one file.");
       return;
@@ -101,7 +116,7 @@ export function InputZone({
     } finally {
       onProcessing(false);
     }
-  }, [pasteText, articleUrl, youtubeUrl, files, flashcardCount, template, language, summaryDetail, difficulty, onProcessComplete, onProcessError, onProcessing]);
+  }, [pasteText, files, flashcardCount, template, language, summaryDetail, difficulty, onProcessComplete, onProcessError, onProcessing]);
 
   const runCompare = useCallback(async () => {
     const formData = new FormData();
@@ -175,175 +190,102 @@ export function InputZone({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`rounded-xl border-2 border-dashed border-[var(--card-border)] bg-[var(--card)] p-8 text-center transition-colors ${
+        className={`rounded-2xl border border-[var(--card-border)] bg-[var(--card)] transition-colors ${
           dragActive ? "border-[var(--accent)] bg-[var(--accent)]/5" : ""
         }`}
       >
-        <p className="text-[var(--muted)] mb-4">
-          Drag and drop PDF, DOCX, TXT, or images (JPG, PNG, GIF, WebP) here, or click to choose files
-        </p>
-        <input
-          type="file"
-          accept={ACCEPT}
-          multiple
-          className="hidden"
-          id="file-upload"
-          onChange={(e) => {
-            const list = (e.target.files ? Array.from(e.target.files) : []).filter(
-              (f) => FILE_EXT_REGEX.test(f.name)
-            );
-            setFiles((prev) => [...prev, ...list].slice(0, 10));
-            e.target.value = "";
-          }}
-        />
-        <label
-          htmlFor="file-upload"
-          className="inline-block px-4 py-2 rounded-lg bg-[var(--accent)] text-white cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          Choose files
-        </label>
+        <div className="flex items-end gap-2 p-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg text-[var(--muted)] hover:bg-white/10 hover:text-[var(--foreground)] transition-colors"
+            aria-label="Attach files"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const list = (e.target.files ? Array.from(e.target.files) : []).filter(
+                (f) => FILE_EXT_REGEX.test(f.name)
+              );
+              setFiles((prev) => [...prev, ...list].slice(0, 10));
+              e.target.value = "";
+            }}
+          />
+          <textarea
+            id="paste"
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            placeholder="Paste text, paste a link (article or YouTube), or attach files…"
+            rows={3}
+            className="flex-1 min-w-0 rounded-lg bg-transparent text-[var(--foreground)] placeholder:text-[var(--muted)] py-2 px-0 text-sm focus:outline-none focus:ring-0 resize-none border-0"
+          />
+          <button
+            type="button"
+            onClick={() => setOptionsOpen((o) => !o)}
+            className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+              optionsOpen ? "text-[var(--accent)] bg-[var(--accent)]/10" : "text-[var(--muted)] hover:bg-white/10 hover:text-[var(--foreground)]"
+            }`}
+            aria-label="Generation options"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={processInput}
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+            aria-label="Process"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        </div>
         {files.length > 0 && (
-          <ul className="mt-4 text-left space-y-2">
+          <div className="px-3 pb-3 flex flex-wrap gap-2">
             {files.map((f, i) => (
-              <li
+              <span
                 key={`${f.name}-${i}`}
-                className="flex items-center justify-between text-sm text-[var(--foreground)]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-[var(--foreground)]"
               >
-                <span className="truncate max-w-[280px]">{f.name}</span>
+                <span className="truncate max-w-[160px]">{f.name}</span>
                 {f.size > MAX_FILE_BYTES && (
-                  <span className="text-amber-500 text-xs">
-                    Over {MAX_FILE_SIZE_MB}MB
-                  </span>
+                  <span className="text-amber-500 shrink-0">Large</span>
                 )}
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
-                  className="text-[var(--muted)] hover:text-red-400 ml-2"
+                  className="shrink-0 text-[var(--muted)] hover:text-red-400"
+                  aria-label={`Remove ${f.name}`}
                 >
-                  Remove
+                  ×
                 </button>
-              </li>
+              </span>
             ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 space-y-4">
-        <div>
-          <label htmlFor="article-url" className="block text-sm font-medium text-[var(--foreground)] mb-1">
-            Article URL
-          </label>
-          <input
-            id="article-url"
-            type="url"
-            value={articleUrl}
-            onChange={(e) => setArticleUrl(e.target.value)}
-            placeholder="https://example.com/article"
-            className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          />
-        </div>
-        <div>
-          <label htmlFor="youtube-url" className="block text-sm font-medium text-[var(--foreground)] mb-1">
-            YouTube video URL
-          </label>
-          <input
-            id="youtube-url"
-            type="url"
-            value={youtubeUrl}
-            onChange={(e) => setYoutubeUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=..."
-            className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          />
-        </div>
-        <div>
-          <label htmlFor="paste" className="block text-sm font-medium text-[var(--foreground)] mb-2">
-            Or paste text below
-          </label>
-          <textarea
-          id="paste"
-          value={pasteText}
-          onChange={(e) => setPasteText(e.target.value)}
-          placeholder="Paste your content here…"
-          rows={6}
-          className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted)] p-4 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-        />
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
-        <button
-          type="button"
-          onClick={() => setCompareMode((m) => !m)}
-          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)] mb-2"
-        >
-          {compareMode ? "▼" : "▶"} Compare two docs
-        </button>
-        {compareMode && (
-          <div className="mt-4 space-y-4">
-            <p className="text-sm text-[var(--muted)]">
-              Add two documents to get a comparison summary and merged bullet points.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs text-[var(--muted)] mb-1">Document 1 (text or file)</label>
-                <textarea
-                  value={compareText1}
-                  onChange={(e) => setCompareText1(e.target.value)}
-                  placeholder="Paste text or use file below"
-                  rows={3}
-                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
-                />
-                <input
-                  type="file"
-                  accept={ACCEPT}
-                  className="mt-1 text-sm text-[var(--muted)]"
-                  onChange={(e) => setCompareFile1(e.target.files?.[0] ?? null)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-[var(--muted)] mb-1">Document 2 (text or file)</label>
-                <textarea
-                  value={compareText2}
-                  onChange={(e) => setCompareText2(e.target.value)}
-                  placeholder="Paste text or use file below"
-                  rows={3}
-                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
-                />
-                <input
-                  type="file"
-                  accept={ACCEPT}
-                  className="mt-1 text-sm text-[var(--muted)]"
-                  onChange={(e) => setCompareFile2(e.target.files?.[0] ?? null)}
-                />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={runCompare}
-              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90"
-            >
-              Compare
-            </button>
           </div>
         )}
-      </div>
-
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
-        <button
-          type="button"
-          onClick={() => setOptionsOpen((o) => !o)}
-          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)]"
-        >
-          {optionsOpen ? "▼" : "▶"} Generation options
-        </button>
         {optionsOpen && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="px-3 pb-3 pt-3 border-t border-[var(--card-border)] grid gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs text-[var(--muted)] mb-1">Flashcards</label>
               <input
@@ -401,6 +343,64 @@ export function InputZone({
                 <option value="advanced">Advanced</option>
               </select>
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
+        <button
+          type="button"
+          onClick={() => setCompareMode((m) => !m)}
+          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)] mb-2"
+        >
+          {compareMode ? "▼" : "▶"} Compare two docs
+        </button>
+        {compareMode && (
+          <div className="mt-4 space-y-4">
+            <p className="text-sm text-[var(--muted)]">
+              Add two documents to get a comparison summary and merged bullet points.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs text-[var(--muted)] mb-1">Document 1 (text or file)</label>
+                <textarea
+                  value={compareText1}
+                  onChange={(e) => setCompareText1(e.target.value)}
+                  placeholder="Paste text or use file below"
+                  rows={3}
+                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                />
+                <input
+                  type="file"
+                  accept={ACCEPT}
+                  className="mt-1 text-sm text-[var(--muted)]"
+                  onChange={(e) => setCompareFile1(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--muted)] mb-1">Document 2 (text or file)</label>
+                <textarea
+                  value={compareText2}
+                  onChange={(e) => setCompareText2(e.target.value)}
+                  placeholder="Paste text or use file below"
+                  rows={3}
+                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                />
+                <input
+                  type="file"
+                  accept={ACCEPT}
+                  className="mt-1 text-sm text-[var(--muted)]"
+                  onChange={(e) => setCompareFile2(e.target.files?.[0] ?? null)}
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={runCompare}
+              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90"
+            >
+              Compare
+            </button>
           </div>
         )}
       </div>

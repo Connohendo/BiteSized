@@ -5,6 +5,7 @@ import type { OutlineNode } from "@/lib/types";
 
 type OutlineCardProps = {
   outline: OutlineNode[];
+  defaultExpanded?: boolean;
 };
 
 function OutlineNodeItem({ node, depth = 0 }: { node: OutlineNode; depth?: number }) {
@@ -42,22 +43,37 @@ function OutlineNodeItem({ node, depth = 0 }: { node: OutlineNode; depth?: numbe
   );
 }
 
-export function OutlineCard({ outline }: OutlineCardProps) {
+export function OutlineCard({ outline, defaultExpanded = false }: OutlineCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   if (!outline?.length) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">
-        Outline
-      </h2>
-      <p className="text-sm text-[var(--muted)] mb-4">
-        Hierarchical outline of the document. Expand or collapse sections.
-      </p>
-      <div className="space-y-0">
-        {outline.map((node, i) => (
-          <OutlineNodeItem key={i} node={node} />
-        ))}
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+          aria-expanded={expanded}
+        >
+          {expanded ? "▼" : "▶"}
+        </button>
+        <h2 className="text-lg font-medium text-[var(--foreground)]">
+          Outline
+        </h2>
       </div>
+      {expanded && (
+        <>
+          <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
+            Hierarchical outline of the document. Expand or collapse sections.
+          </p>
+          <div className="space-y-0">
+            {outline.map((node, i) => (
+              <OutlineNodeItem key={i} node={node} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

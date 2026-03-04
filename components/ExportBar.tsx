@@ -61,7 +61,7 @@ export function ExportBar({ result }: ExportBarProps) {
   if (!hasContent) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
       <span className="text-sm font-medium text-[var(--foreground)] mr-2">
         Export
       </span>

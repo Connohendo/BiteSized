@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 type MindMapCardProps = {
   mindMap: string;
+  defaultExpanded?: boolean;
 };
 
-export function MindMapCard({ mindMap }: MindMapCardProps) {
+export function MindMapCard({ mindMap, defaultExpanded = false }: MindMapCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,20 +54,34 @@ export function MindMapCard({ mindMap }: MindMapCardProps) {
   if (!mindMap?.trim()) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">
-        Mind map
-      </h2>
-      <p className="text-sm text-[var(--muted)] mb-4">
-        Main concepts and relationships from the document.
-      </p>
-      {error && (
-        <p className="text-sm text-amber-500 mb-2">{error}</p>
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+          aria-expanded={expanded}
+        >
+          {expanded ? "▼" : "▶"}
+        </button>
+        <h2 className="text-lg font-medium text-[var(--foreground)]">
+          Mind map
+        </h2>
+      </div>
+      {expanded && (
+        <>
+          <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
+            Main concepts and relationships from the document.
+          </p>
+          {error && (
+            <p className="text-sm text-amber-500 mb-2">{error}</p>
+          )}
+          <div
+            ref={containerRef}
+            className="min-h-[420px] flex items-center justify-center overflow-auto [&_svg]:max-w-none [&_svg]:min-w-[600px] [&_.mermaid]:flex [&_.mermaid]:justify-center"
+          />
+        </>
       )}
-      <div
-        ref={containerRef}
-        className="min-h-[200px] flex items-center justify-center overflow-x-auto [&_svg]:max-w-full [&_.mermaid]:flex [&_.mermaid]:justify-center"
-      />
     </div>
   );
 }

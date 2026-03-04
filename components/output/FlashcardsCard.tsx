@@ -7,13 +7,15 @@ import { speak } from "@/lib/tts";
 
 type FlashcardsCardProps = {
   flashcards: { front: string; back: string }[];
+  defaultExpanded?: boolean;
 };
 
 function flashcardsToCopyText(flashcards: { front: string; back: string }[]): string {
   return flashcards.map((c) => `${c.front}\t${c.back}`).join("\n");
 }
 
-export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
+export function FlashcardsCard({ flashcards, defaultExpanded = false }: FlashcardsCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
@@ -58,11 +60,21 @@ export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
   const card = flashcards[index];
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <h2 className="text-lg font-medium text-[var(--foreground)]">
-          Flashcards
-        </h2>
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+            aria-expanded={expanded}
+          >
+            {expanded ? "▼" : "▶"}
+          </button>
+          <h2 className="text-lg font-medium text-[var(--foreground)]">
+            Flashcards
+          </h2>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
@@ -81,6 +93,8 @@ export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
           <CopyButton text={flashcardsToCopyText(flashcards)} />
         </div>
       </div>
+      {expanded && (
+        <>
         <p className="text-xs text-[var(--muted)] mb-1">
           Space to flip · ← → to navigate
         </p>
@@ -125,6 +139,8 @@ export function FlashcardsCard({ flashcards }: FlashcardsCardProps) {
           </button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,22 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { ExplainLikeFive } from "@/components/ExplainLikeFive";
 import { speak } from "@/lib/tts";
 
 type SummaryCardProps = {
   summary: string;
+  defaultExpanded?: boolean;
 };
 
-export function SummaryCard({ summary }: SummaryCardProps) {
+export function SummaryCard({ summary, defaultExpanded = true }: SummaryCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   if (!summary) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <h2 className="text-lg font-medium text-[var(--foreground)]">
-          Summary
-        </h2>
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+            aria-expanded={expanded}
+          >
+            {expanded ? "▼" : "▶"}
+          </button>
+          <h2 className="text-lg font-medium text-[var(--foreground)]">
+            Summary
+          </h2>
+        </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -29,9 +42,11 @@ export function SummaryCard({ summary }: SummaryCardProps) {
           <CopyButton text={summary} />
         </div>
       </div>
-      <div className="text-[var(--foreground)] text-sm leading-relaxed whitespace-pre-wrap">
-        {summary}
-      </div>
+      {expanded && (
+        <div className="text-[var(--foreground)] text-sm leading-relaxed whitespace-pre-wrap mt-1">
+          {summary}
+        </div>
+      )}
     </div>
   );
 }

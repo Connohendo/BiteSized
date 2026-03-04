@@ -6,9 +6,11 @@ type Message = { role: "user" | "assistant"; content: string };
 
 type QAOverDocProps = {
   documentText: string;
+  defaultExpanded?: boolean;
 };
 
-export function QAOverDoc({ documentText }: QAOverDocProps) {
+export function QAOverDoc({ documentText, defaultExpanded = false }: QAOverDocProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,11 +54,23 @@ export function QAOverDoc({ documentText }: QAOverDocProps) {
   if (!documentText?.trim()) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <h2 className="text-lg font-medium text-[var(--foreground)] mb-3">
-        Q&A over your doc
-      </h2>
-      <p className="text-sm text-[var(--muted)] mb-4">
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+          aria-expanded={expanded}
+        >
+          {expanded ? "▼" : "▶"}
+        </button>
+        <h2 className="text-lg font-medium text-[var(--foreground)]">
+          Q&A over your doc
+        </h2>
+      </div>
+      {expanded && (
+        <>
+      <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
         Ask follow-up questions; answers are grounded in your uploaded content.
       </p>
       <div
@@ -105,6 +119,8 @@ export function QAOverDoc({ documentText }: QAOverDocProps) {
           Send
         </button>
       </form>
+        </>
+      )}
     </div>
   );
 }

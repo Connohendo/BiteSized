@@ -64,7 +64,7 @@ function DashboardContent() {
           Dashboard
         </h1>
         <p className="text-[var(--muted)] mt-1">
-          Upload a file or paste text to get a summary, key points, flashcards, and key terms.
+          Upload a file or paste text to get a summary, key points, key terms, flashcards, quiz, outline, mind map, and Q&A.
         </p>
       </div>
 
@@ -89,21 +89,57 @@ function DashboardContent() {
       )}
 
       {result && !isLoading && (
-        <div className="mt-8 space-y-6 print:mt-0" id="study-pack">
-          <div className="no-print">
+        <div className="mt-10 pt-8 border-t border-[var(--card-border)] print:mt-0 print:pt-0 print:border-0" id="study-pack">
+          <h2 className="text-xl font-semibold text-[var(--foreground)] mb-2">
+            Your study pack
+          </h2>
+          <p className="text-sm text-[var(--muted)] mb-6">
+            Summary, key points, study tools, and more from your content.
+          </p>
+          <div className="no-print mb-6">
             <ExportBar result={result} />
           </div>
           <h2 className="hidden print:block text-xl font-semibold mb-4 text-black">
             BiteSized Study Pack
           </h2>
-          <SummaryCard summary={result.summary} />
-          <BulletsCard bullets={result.bullets} />
-          <KeyTermsCard keyTerms={result.keyTerms} />
-          <FlashcardsCard flashcards={result.flashcards} />
-          <QuizCard questions={result.quiz ?? []} />
-          <OutlineCard outline={result.outline ?? []} />
-          <MindMapCard mindMap={result.mindMap ?? ""} />
-          <QAOverDoc documentText={result.text} />
+
+          <section className="space-y-6 mb-8">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--muted)] mb-3">
+              Overview
+            </h3>
+            <div className="space-y-6">
+              <SummaryCard summary={result.summary} />
+              <BulletsCard bullets={result.bullets} />
+            </div>
+          </section>
+
+          <section className="space-y-6 mb-8">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--muted)] mb-3">
+              Study tools
+            </h3>
+            <div className="space-y-6">
+              <KeyTermsCard keyTerms={result.keyTerms} />
+              <FlashcardsCard flashcards={result.flashcards} />
+              <QuizCard questions={result.quiz ?? []} />
+            </div>
+          </section>
+
+          <section className="space-y-6 mb-8">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--muted)] mb-3">
+              Structure
+            </h3>
+            <div className="space-y-6">
+              <OutlineCard outline={result.outline ?? []} />
+              <MindMapCard mindMap={result.mindMap ?? ""} />
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--muted)] mb-3">
+              Q&A
+            </h3>
+            <QAOverDoc documentText={result.text} />
+          </section>
         </div>
       )}
     </div>

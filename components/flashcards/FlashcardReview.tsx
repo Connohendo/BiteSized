@@ -79,8 +79,8 @@ export function FlashcardReview({ flashcards, onExit }: FlashcardReviewProps) {
 
   if (totalInSession === 0) {
     return (
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-        <h2 className="text-lg font-medium text-[var(--foreground)] mb-2">
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
+        <h2 className="text-lg font-medium text-[var(--foreground)] mb-4">
           Review queue
         </h2>
         <p className="text-[var(--muted)] mb-4">No cards due right now. Check back later!</p>
@@ -110,7 +110,7 @@ export function FlashcardReview({ flashcards, onExit }: FlashcardReviewProps) {
   }
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
       <div className="flex items-center justify-between gap-2 mb-4">
         <h2 className="text-lg font-medium text-[var(--foreground)]">
           Review ({queueIndex + 1} / {totalInSession})
