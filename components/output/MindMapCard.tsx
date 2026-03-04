@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CollapseChevron } from "@/components/CollapseChevron";
 
 type MindMapCardProps = {
   mindMap: string;
@@ -49,25 +50,23 @@ export function MindMapCard({ mindMap, defaultExpanded = false }: MindMapCardPro
     return () => {
       cancelled = true;
     };
-  }, [mindMap]);
+  }, [mindMap, expanded]);
 
   if (!mindMap?.trim()) return null;
 
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
-          aria-expanded={expanded}
-        >
-          {expanded ? "▼" : "▶"}
-        </button>
-        <h2 className="text-lg font-medium text-[var(--foreground)]">
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        className="flex items-center gap-2 mb-4 rounded text-left text-[var(--foreground)] hover:opacity-80 transition-opacity w-full"
+        aria-expanded={expanded}
+      >
+        <CollapseChevron expanded={expanded} className="text-[var(--muted)]" />
+        <h2 className="text-lg font-medium">
           Mind map
         </h2>
-      </div>
+      </button>
       {expanded && (
         <>
           <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">

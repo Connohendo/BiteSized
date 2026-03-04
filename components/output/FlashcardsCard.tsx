@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CopyButton } from "@/components/CopyButton";
+import { CollapseChevron } from "@/components/CollapseChevron";
 import { FlashcardReview } from "@/components/flashcards/FlashcardReview";
 import { speak } from "@/lib/tts";
 
@@ -62,19 +63,17 @@ export function FlashcardsCard({ flashcards, defaultExpanded = false }: Flashcar
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
       <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
-            aria-expanded={expanded}
-          >
-            {expanded ? "▼" : "▶"}
-          </button>
-          <h2 className="text-lg font-medium text-[var(--foreground)]">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="flex items-center gap-2 rounded text-left text-[var(--foreground)] hover:opacity-80 transition-opacity"
+          aria-expanded={expanded}
+        >
+          <CollapseChevron expanded={expanded} className="text-[var(--muted)]" />
+          <h2 className="text-lg font-medium">
             Flashcards
           </h2>
-        </div>
+        </button>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"

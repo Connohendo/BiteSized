@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { CollapseChevron } from "@/components/CollapseChevron";
 import type { QuizQuestion } from "@/lib/types";
 
 type QuizCardProps = {
@@ -56,19 +57,17 @@ export function QuizCard({ questions, defaultExpanded = false }: QuizCardProps) 
     return (
       <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setExpanded((e) => !e)}
-              className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
-              aria-expanded={expanded}
-            >
-              {expanded ? "▼" : "▶"}
-            </button>
-            <h2 className="text-lg font-medium text-[var(--foreground)]">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="flex items-center gap-2 rounded text-left text-[var(--foreground)] hover:opacity-80 transition-opacity"
+            aria-expanded={expanded}
+          >
+            <CollapseChevron expanded={expanded} className="text-[var(--muted)]" />
+            <h2 className="text-lg font-medium">
               Quiz
             </h2>
-          </div>
+          </button>
         </div>
         {expanded && (
           <>
@@ -99,14 +98,14 @@ export function QuizCard({ questions, defaultExpanded = false }: QuizCardProps) 
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
+            className="flex items-center gap-2 rounded text-left text-[var(--foreground)] hover:opacity-80 transition-opacity"
             aria-expanded={expanded}
           >
-            {expanded ? "▼" : "▶"}
+            <CollapseChevron expanded={expanded} className="text-[var(--muted)]" />
+            <h2 className="text-lg font-medium">
+              Quiz complete
+            </h2>
           </button>
-          <h2 className="text-lg font-medium text-[var(--foreground)]">
-            Quiz complete
-          </h2>
         </div>
         {expanded && (
           <>
@@ -152,19 +151,17 @@ export function QuizCard({ questions, defaultExpanded = false }: QuizCardProps) 
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
       <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[var(--muted)] hover:bg-white/5"
-            aria-expanded={expanded}
-          >
-            {expanded ? "▼" : "▶"}
-          </button>
-          <h2 className="text-lg font-medium text-[var(--foreground)]">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="flex items-center gap-2 rounded text-left text-[var(--foreground)] hover:opacity-80 transition-opacity"
+          aria-expanded={expanded}
+        >
+          <CollapseChevron expanded={expanded} className="text-[var(--muted)]" />
+          <h2 className="text-lg font-medium">
             Quiz
           </h2>
-        </div>
+        </button>
         <span className="text-sm text-[var(--muted)]">
           {index + 1} / {quiz.length}
         </span>
