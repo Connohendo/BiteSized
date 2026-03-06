@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  usage         Usage[]
+  subscription  Subscription?
+}
+
+model Usage {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @db.Date
+  processCount Int      @default(0)
+  compareCount Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  plan                  String    @default("free")
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  status                String?
+  periodEnd             DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

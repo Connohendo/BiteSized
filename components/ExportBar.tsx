@@ -1,0 +1,100 @@
+"use client";
+
+import { useCallback } from "react";
+import { toAnkiCsv } from "@/lib/export/anki";
+import { toMarkdown } from "@/lib/export/markdown";
+import { useToast } from "@/components/Toast";
+import type { ProcessResult } from "@/lib/types";
+
+type ExportBarProps = {
+  result: ProcessResult;
+};
+
+export function ExportBar({ result }: ExportBarProps) {
+  const { showToast } = useToast();
+
+  const handleDownloadAnki = useCallback(() => {
+    const csv = toAnkiCsv(result.flashcards);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bitesized-flashcards.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [result.flashcards]);
+
+  const handleCopyMarkdown = useCallback(async () => {
+    const md = toMarkdown(result);
+    await navigator.clipboard.writeText(md);
+    showToast("Copied to clipboard");
+  }, [result, showToast]);
+
+  const handleDownloadMarkdown = useCallback(() => {
+    const md = toMarkdown(result);
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bitesized-study-pack.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [result]);
+
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
+
+  const hasFlashcards = result.flashcards?.length > 0;
+  const hasQuiz = (result.quiz?.length ?? 0) > 0;
+  const hasOutline = (result.outline?.length ?? 0) > 0;
+  const hasMindMap = (result.mindMap?.trim()?.length ?? 0) > 0;
+  const hasContent =
+    result.summary ||
+    (result.bullets?.length ?? 0) > 0 ||
+    (result.keyTerms?.length ?? 0) > 0 ||
+    hasFlashcards ||
+    hasQuiz ||
+    hasOutline ||
+    hasMindMap;
+
+  if (!hasContent) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-sm">
+      <span className="text-sm font-medium text-[var(--foreground)] mr-2">
+        Export
+      </span>
+      {hasFlashcards && (
+        <button
+          type="button"
+          onClick={handleDownloadAnki}
+          className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
+        >
+          Download Anki CSV
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={handleCopyMarkdown}
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
+      >
+        Copy as Markdown
+      </button>
+      <button
+        type="button"
+        onClick={handleDownloadMarkdown}
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
+      >
+        Download Markdown
+      </button>
+      <button
+        type="button"
+        onClick={handlePrint}
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
+      >
+        Print / Save as PDF
+      </button>
+    </div>
+  );
+}
