@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { toAnkiCsv } from "@/lib/export/anki";
 import { toMarkdown } from "@/lib/export/markdown";
+import { useToast } from "@/components/Toast";
 import type { ProcessResult } from "@/lib/types";
 
 type ExportBarProps = {
@@ -10,7 +11,7 @@ type ExportBarProps = {
 };
 
 export function ExportBar({ result }: ExportBarProps) {
-  const [markdownCopied, setMarkdownCopied] = useState(false);
+  const { showToast } = useToast();
 
   const handleDownloadAnki = useCallback(() => {
     const csv = toAnkiCsv(result.flashcards);
@@ -26,9 +27,8 @@ export function ExportBar({ result }: ExportBarProps) {
   const handleCopyMarkdown = useCallback(async () => {
     const md = toMarkdown(result);
     await navigator.clipboard.writeText(md);
-    setMarkdownCopied(true);
-    setTimeout(() => setMarkdownCopied(false), 2000);
-  }, [result]);
+    showToast("Copied to clipboard");
+  }, [result, showToast]);
 
   const handleDownloadMarkdown = useCallback(() => {
     const md = toMarkdown(result);
@@ -69,7 +69,7 @@ export function ExportBar({ result }: ExportBarProps) {
         <button
           type="button"
           onClick={handleDownloadAnki}
-          className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5"
+          className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
         >
           Download Anki CSV
         </button>
@@ -77,21 +77,21 @@ export function ExportBar({ result }: ExportBarProps) {
       <button
         type="button"
         onClick={handleCopyMarkdown}
-        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5"
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
       >
-        {markdownCopied ? "Copied!" : "Copy as Markdown"}
+        Copy as Markdown
       </button>
       <button
         type="button"
         onClick={handleDownloadMarkdown}
-        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5"
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
       >
         Download Markdown
       </button>
       <button
         type="button"
         onClick={handlePrint}
-        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5"
+        className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
       >
         Print / Save as PDF
       </button>

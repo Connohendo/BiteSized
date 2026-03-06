@@ -28,6 +28,18 @@ export type HistoryItem = {
   result: ProcessResult;
 };
 
+export type CollectionPackEntry = {
+  id: string;
+  displayName?: string;
+};
+
+export type Collection = {
+  id: string;
+  name: string;
+  createdAt: number;
+  packs: CollectionPackEntry[];
+};
+
 export type ProcessResultPayload = ProcessResult;
 
 export type ProcessOptions = {

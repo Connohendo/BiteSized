@@ -52,10 +52,16 @@ function makeTitle(result: ProcessResult): string {
   return "Untitled";
 }
 
-export function addToHistory(result: ProcessResult): HistoryItem {
+export function addToHistory(
+  result: ProcessResult,
+  titleOverride?: string
+): HistoryItem {
   const items = getStored();
   const id = crypto.randomUUID();
-  const title = makeTitle(result);
+  const title =
+    titleOverride?.trim() && titleOverride.length > 0
+      ? titleOverride.trim().slice(0, 200)
+      : makeTitle(result);
   const item: HistoryItem = {
     id,
     createdAt: Date.now(),

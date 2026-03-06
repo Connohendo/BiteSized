@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { ensureUserAndSubscription, incrementCompare } from "@/lib/usage";
 import { extractTextFromBuffer } from "@/lib/parse";
 import { generateComparison } from "@/lib/llm";
 
@@ -57,6 +59,21 @@ export async function POST(request: NextRequest) {
     if (text2.length > MAX_TEXT_LENGTH) text2 = text2.slice(0, MAX_TEXT_LENGTH);
 
     const { summary, bullets } = await generateComparison(text1, text2);
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id && user.email) {
+      try {
+        await ensureUserAndSubscription(
+          user.id,
+          user.email,
+          user.user_metadata?.name
+        );
+        await incrementCompare(user.id);
+      } catch (e) {
+        console.error("[POST /api/compare] usage tracking", e);
+      }
+    }
 
     return NextResponse.json({
       summary,

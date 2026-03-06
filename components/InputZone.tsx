@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { ProcessResult, ProcessOptions } from "@/lib/types";
+import { CollapseChevron } from "@/components/CollapseChevron";
 
 const ACCEPT = ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp";
 const MAX_FILE_SIZE_MB = 10;
@@ -206,7 +207,7 @@ export function InputZone({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg text-[var(--muted)] hover:bg-white/10 hover:text-[var(--foreground)] transition-colors"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg text-[var(--muted)] hover:bg-white/10 hover:text-[var(--foreground)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
             aria-label="Attach files"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -232,14 +233,20 @@ export function InputZone({
             id="paste"
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                processInput();
+              }
+            }}
             placeholder="Paste text, paste a link (article or YouTube), or attach files…"
             rows={3}
-            className="flex-1 min-w-0 rounded-lg bg-transparent text-[var(--foreground)] placeholder:text-[var(--muted)] py-2 px-0 text-sm focus:outline-none focus:ring-0 resize-none border-0"
+            className="flex-1 min-w-0 rounded-lg bg-transparent text-[var(--foreground)] placeholder:text-[var(--muted)] py-2 px-0 text-sm resize-none border-0 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-inset"
           />
           <button
             type="button"
             onClick={() => setOptionsOpen((o) => !o)}
-            className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+            className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)] ${
               optionsOpen ? "text-[var(--accent)] bg-[var(--accent)]/10" : "text-[var(--muted)] hover:bg-white/10 hover:text-[var(--foreground)]"
             }`}
             aria-label="Generation options"
@@ -252,7 +259,7 @@ export function InputZone({
           <button
             type="button"
             onClick={processInput}
-            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--accent)] text-white hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
             aria-label="Process"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -275,7 +282,7 @@ export function InputZone({
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
-                  className="shrink-0 text-[var(--muted)] hover:text-red-400"
+                  className="shrink-0 text-[var(--muted)] hover:text-red-400 rounded focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   aria-label={`Remove ${f.name}`}
                 >
                   ×
@@ -294,7 +301,7 @@ export function InputZone({
                 max={30}
                 value={flashcardCount}
                 onChange={(e) => setFlashcardCount(Number(e.target.value) || 15)}
-                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               />
             </div>
             <div>
@@ -302,7 +309,7 @@ export function InputZone({
               <select
                 value={template}
                 onChange={(e) => setTemplate(e.target.value as ProcessOptions["template"])}
-                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               >
                 <option value="default">Default</option>
                 <option value="exam">Exam prep</option>
@@ -317,7 +324,7 @@ export function InputZone({
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 placeholder="e.g. English, Spanish"
-                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               />
             </div>
             <div>
@@ -325,7 +332,7 @@ export function InputZone({
               <select
                 value={summaryDetail}
                 onChange={(e) => setSummaryDetail(e.target.value as ProcessOptions["summaryDetail"])}
-                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               >
                 <option value="brief">Brief</option>
                 <option value="detailed">Detailed</option>
@@ -336,7 +343,7 @@ export function InputZone({
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value as ProcessOptions["difficulty"])}
-                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+                className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               >
                 <option value="simple">Simple</option>
                 <option value="standard">Standard</option>
@@ -351,9 +358,10 @@ export function InputZone({
         <button
           type="button"
           onClick={() => setCompareMode((m) => !m)}
-          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)] mb-2"
+          className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)] mb-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
         >
-          {compareMode ? "▼" : "▶"} Compare two docs
+          <CollapseChevron expanded={compareMode} />
+          Compare two documents
         </button>
         {compareMode && (
           <div className="mt-4 space-y-4">
@@ -368,7 +376,7 @@ export function InputZone({
                   onChange={(e) => setCompareText1(e.target.value)}
                   placeholder="Paste text or use file below"
                   rows={3}
-                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 />
                 <input
                   type="file"
@@ -384,7 +392,7 @@ export function InputZone({
                   onChange={(e) => setCompareText2(e.target.value)}
                   placeholder="Paste text or use file below"
                   rows={3}
-                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]"
+                  className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 />
                 <input
                   type="file"
@@ -397,21 +405,13 @@ export function InputZone({
             <button
               type="button"
               onClick={runCompare}
-              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90"
+              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
             >
               Compare
             </button>
           </div>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={processInput}
-        className="w-full md:w-auto px-6 py-3 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90 transition-opacity"
-      >
-        Process
-      </button>
     </div>
   );
 }

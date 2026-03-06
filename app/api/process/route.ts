@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { ensureUserAndSubscription, incrementProcess } from "@/lib/usage";
 import { extractTextFromBuffer } from "@/lib/parse";
 import { generateStudyMaterials } from "@/lib/llm";
 import { fetchArticleText } from "@/lib/fetch-article";
@@ -128,6 +130,21 @@ export async function POST(request: NextRequest) {
 
     const { summary, bullets, flashcards, keyTerms, quiz, outline, mindMap } =
       await generateStudyMaterials(text, options);
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id && user.email) {
+      try {
+        await ensureUserAndSubscription(
+          user.id,
+          user.email,
+          user.user_metadata?.name
+        );
+        await incrementProcess(user.id);
+      } catch (e) {
+        console.error("[POST /api/process] usage tracking", e);
+      }
+    }
 
     return NextResponse.json({
       text,

@@ -62,14 +62,14 @@ export function StudyTimer() {
         <button
           type="button"
           onClick={toggle}
-          className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90"
+          className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
         >
           {isRunning ? "Pause" : "Start"}
         </button>
         <button
           type="button"
           onClick={() => reset(isBreak)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--card-border)] text-sm text-[var(--foreground)] hover:bg-white/5"
+          className="px-3 py-1.5 rounded-lg border border-[var(--card-border)] text-sm text-[var(--foreground)] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--card)]"
         >
           Reset
         </button>
