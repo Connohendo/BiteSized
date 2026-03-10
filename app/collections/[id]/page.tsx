@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -55,16 +55,16 @@ export default function CollectionDetailPage() {
   const [editingPackId, setEditingPackId] = useState<string | null>(null);
   const [editPackNameValue, setEditPackNameValue] = useState("");
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const c = getCollection(id);
     setCollection(c);
     if (c) setEditNameValue(c.name);
     setHistoryItems(getHistory());
-  };
+  }, [id]);
 
   useEffect(() => {
     refresh();
-  }, [id]);
+  }, [refresh]);
 
   if (!id) {
     return (
